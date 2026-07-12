@@ -1,6 +1,6 @@
 use clap::{Parser, ValueEnum};
 use image::{ImageFormat, imageops::FilterType};
-use std::{fmt, num::NonZeroU32, path::PathBuf, process};
+use std::{collections::BTreeSet, fmt, num::NonZeroU32, path::PathBuf, process};
 
 #[derive(Parser, Debug)]
 #[command(name = "imgscale", version, about)]
@@ -76,14 +76,47 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::fs::create_dir_all(&args.output_dir)?;
     }
 
+    let target_widths = {
+        let mut set = BTreeSet::new();
+        let mut added_full = false;
+        for width in &args.widths {
+            match (width.get() >= img.width(), added_full) {
+                (true, false) => {
+                    set.insert(*width);
+                    added_full = true;
+                }
+                (true, true) => {}
+                (false, _) => {
+                    set.insert(*width);
+                }
+            }
+        }
+
+        set
+    };
+
     let target_format: ImageFormat = args.format.into();
 
-    for width in args.widths {
-        println!("Scaling...");
+    for width in target_widths {
+        let (resized, filename) = if width.get() >= img.width() {
+            println!(
+                "Requested width ({}px) is bigger than original width ({}px). Skipping resize.",
+                width,
+                img.width()
+            );
 
-        let resized = img.resize(width.get(), u32::MAX, FilterType::Lanczos3);
+            let filename = format!("{}-full.{}", file_stem, args.format);
 
-        let filename = format!("{}-{}w.{}", file_stem, width, args.format);
+            (img.clone(), filename)
+        } else {
+            println!("Scaling to width {}px...", width);
+
+            let resized = img.resize(width.get(), u32::MAX, FilterType::Lanczos3);
+            let filename = format!("{}-{}w.{}", file_stem, width, args.format);
+
+            (resized, filename)
+        };
+
         let output_path = args.output_dir.join(&filename);
 
         println!("Saving: {}...", filename);
