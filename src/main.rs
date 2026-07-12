@@ -82,12 +82,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for width in &args.widths {
             match (width.get() >= img.width(), added_full) {
                 (true, false) => {
-                    set.insert(*width);
+                    set.insert(width.get());
                     added_full = true;
                 }
                 (true, true) => {}
                 (false, _) => {
-                    set.insert(*width);
+                    set.insert(width.get());
                 }
             }
         }
@@ -98,7 +98,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let target_format: ImageFormat = args.format.into();
 
     for width in target_widths {
-        let (resized, filename) = if width.get() >= img.width() {
+        let (resized, filename) = if width >= img.width() {
             println!(
                 "Requested width ({}px) is bigger than original width ({}px). Skipping resize.",
                 width,
@@ -111,7 +111,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             println!("Scaling to width {}px...", width);
 
-            let resized = img.resize(width.get(), u32::MAX, FilterType::Lanczos3);
+            let resized = img.resize(width, u32::MAX, FilterType::Lanczos3);
             let filename = format!("{}-{}w.{}", file_stem, width, args.format);
 
             (resized, filename)
