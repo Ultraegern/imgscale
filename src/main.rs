@@ -1,6 +1,6 @@
 use clap::{Parser, ValueEnum};
 use image::{ImageFormat, imageops::FilterType};
-use std::{num::NonZeroU32, path::PathBuf, process};
+use std::{fmt, num::NonZeroU32, path::PathBuf, process};
 
 #[derive(Parser, Debug)]
 #[command(name = "imgscale", version, about)]
@@ -41,15 +41,16 @@ impl From<ExportFormat> for ImageFormat {
     }
 }
 
-impl From<ExportFormat> for &str {
-    fn from(format: ExportFormat) -> Self {
-        match format {
+impl fmt::Display for ExportFormat {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let ext = match self {
             ExportFormat::Webp => "webp",
             ExportFormat::Avif => "avif",
             ExportFormat::Png => "png",
             ExportFormat::Jpeg => "jpeg",
             ExportFormat::Jpg => "jpg",
-        }
+        };
+        write!(f, "{}", ext)
     }
 }
 
@@ -69,25 +70,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Reading original image: {:?}...", args.input);
     let img = image::open(&args.input)?;
-    let orig_width = img.width();
-    let orig_height = img.height();
-    println!("Original dimensions: {}x{}", orig_width, orig_height);
+    println!("Original dimensions: {}x{}", img.width(), img.height());
 
     if !args.output_dir.exists() {
         std::fs::create_dir_all(&args.output_dir)?;
     }
 
     let target_format: ImageFormat = args.format.into();
-    let extension: &str = args.format.into();
 
     for width in args.widths {
-        let height = ((orig_height as u64 * width.get() as u64) / orig_width as u64) as u32;
+        println!("Scaling...");
 
-        println!("Scaling to {}x{}...", width, height);
+        let resized = img.resize(width.get(), u32::MAX, FilterType::Lanczos3);
 
-        let resized = img.resize(width.get(), height, FilterType::Lanczos3);
-
-        let filename = format!("{}-{}w.{}", file_stem, width, extension);
+        let filename = format!("{}-{}w.{}", file_stem, width, args.format);
         let output_path = args.output_dir.join(&filename);
 
         println!("Saving: {}...", filename);
