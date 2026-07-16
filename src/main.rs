@@ -3,7 +3,7 @@ use image::{ImageFormat, imageops::FilterType};
 use std::{
     cmp,
     collections::BTreeSet,
-    fmt, io,
+    fmt, fs, io,
     num::NonZeroU32,
     path::{self, Path, PathBuf},
     process,
@@ -23,11 +23,15 @@ struct Args {
     #[arg(short, long, required = true, value_delimiter = ',')]
     widths: Vec<NonZeroU32>,
 
-    /// Text put in the <img sizes> field
+    /// Text to put in the <img sizes> field
     #[arg(short, long)]
     sizes: Option<String>,
 
-    /// The web server root directory. Used to generate the correct paths (e.g. "/var/www/html" or "./dist")
+    /// Text to put in the <img alt> field
+    #[arg(short, long)]
+    alt: Option<String>,
+
+    /// The web server root directory. Used to generate the correct url paths (e.g. "/var/www/html" or "./dist")
     #[arg(short, long)]
     root: Option<PathBuf>,
 
@@ -101,7 +105,7 @@ impl Eq for GeneratedImage {}
 
 impl PartialOrd for GeneratedImage {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        self.width.partial_cmp(&other.width)
+        Some(self.cmp(other))
     }
 }
 
@@ -188,7 +192,7 @@ fn resolve_web_url(file_path: &Path, webserver_root: Option<&Path>) -> io::Resul
 }
 
 #[rustfmt::skip]
-fn build_img_tag(images: &[GeneratedImage], sizes: Option<&str>) -> String {
+fn build_img_tag(images: &[GeneratedImage], sizes: Option<&str>, alt: Option<&str>) -> String {
     let srcset = build_srcset(images);
     let fallback_src = &images.last().unwrap().web_url;
 
@@ -200,15 +204,17 @@ fn build_img_tag(images: &[GeneratedImage], sizes: Option<&str>) -> String {
         }
     };
 
+    let alt = alt.unwrap_or("INSERT ALT TEXT HERE");
+
 format!(
 r###"<img
   srcset="{}"
   sizes="{}"
   src="{}"
   loading="lazy" decoding="async"
-  alt="INSERT ALT TEXT HERE"
+  alt="{}"
 >"###,
-srcset, sizes, fallback_src
+srcset, sizes, fallback_src, alt,
 )
 }
 
@@ -237,11 +243,9 @@ fn main() {
 
     eprintln!("INFO Original dimensions: {}x{}", img.width(), img.height());
 
-    if !args.output_dir.exists() {
-        if let Err(e) = std::fs::create_dir_all(&args.output_dir) {
-            eprintln!("ERROR Failed to create output directory: {}", e);
-            process::exit(1);
-        }
+    if let Err(e) = fs::create_dir_all(&args.output_dir) {
+        eprintln!("ERROR Failed to create output directory: {}", e);
+        process::exit(1);
     }
 
     let target_widths = {
@@ -268,11 +272,19 @@ fn main() {
 
     for target_width in target_widths {
         let (resized, filename, actual_width) = if target_width >= img.width() {
-            eprintln!(
-                "WARN Requested width ({}px) is bigger than original width ({}px). Skipping resize.",
-                target_width,
-                img.width()
-            );
+            if target_width == img.width() {
+                eprintln!(
+                    "INFO Requested width ({}px) is the same as the original width ({}px). Skipping resize.",
+                    target_width,
+                    img.width()
+                );
+            } else {
+                eprintln!(
+                    "WARN Requested width ({}px) is bigger than original width ({}px). Skipping resize.",
+                    target_width,
+                    img.width()
+                );
+            }
 
             let filename = format!("{}-full.{}", file_stem, args.format);
 
@@ -313,6 +325,10 @@ fn main() {
     eprintln!("INFO All sizes successfully generated!");
 
     generated_images.sort();
-    let img_tag = build_img_tag(&generated_images, None);
+    let img_tag = build_img_tag(
+        &generated_images,
+        args.sizes.as_deref(),
+        args.alt.as_deref(),
+    );
     println!("{}", img_tag);
 }
