@@ -51,10 +51,16 @@ fn main() {
         }
     };
 
-    let img_tag = build_img_tag(
+    let img_tag = match build_img_tag(
         &generated_images,
         args.sizes.as_deref(),
         args.alt.as_deref(),
-    );
+    ) {
+        Ok(tag) => tag,
+        Err(e) => {
+            eprintln!("ERROR: {e}");
+            std::process::exit(1);
+        }
+    };
     println!("{}", img_tag);
 }

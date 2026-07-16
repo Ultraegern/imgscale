@@ -1,6 +1,6 @@
 use crate::{Config, Error, Result, config::TargetWidth, model::GeneratedImage, web};
 use image::{DynamicImage, imageops::FilterType};
-use std::{fs, io, path::Path};
+use std::{fs, path::Path};
 
 /// Loads an image from a file path, extracts its name, and scales it according to the config.
 pub fn scale_image_from_file<P: AsRef<Path>>(
@@ -12,14 +12,14 @@ pub fn scale_image_from_file<P: AsRef<Path>>(
     if !path.exists() {
         return Err(Error::InputNotFound(path.to_path_buf()));
     }
+
     fs::create_dir_all(config.out_dir())?;
 
-    let name = path.file_stem().and_then(|s| s.to_str()).ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::InvalidInput,
-            format!("Failed to extract file name from path: {}", path.display()),
-        )
-    })?;
+    let name = path
+        .file_stem()
+        .ok_or_else(|| Error::FilenameExtraction(path.to_path_buf()))?
+        .to_str()
+        .ok_or_else(|| Error::InvalidUtf8(format!("{:?}", path)))?;
 
     let img = image::open(path)?;
 

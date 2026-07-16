@@ -1,25 +1,23 @@
-use crate::model::GeneratedImage;
-use std::{
-    io,
-    path::{self, Path},
-};
+use crate::{Error, Result, model::GeneratedImage};
+use std::path::{self, Path};
 
 #[rustfmt::skip]
-pub fn build_img_tag(images: &[GeneratedImage], sizes: Option<&str>, alt: Option<&str>) -> String {
+pub fn build_img_tag(images: &[GeneratedImage], sizes: Option<&str>, alt: Option<&str>) -> Result<String> {
     let srcset = build_srcset(images);
-    let fallback_src = &images.last().unwrap().web_url();
+    let last_image = images.last().ok_or(Error::EmptyImageList)?;
+    let fallback_src = last_image.web_url();
 
     let sizes = match sizes {
         Some(s) => s.into(),
         None => {
-            let max_width = images.last().unwrap().width();
+            let max_width = last_image.width();
             format!("(max-width: {max_width}px) 100vw, {max_width}px")
         }
     };
 
     let alt = alt.unwrap_or("INSERT ALT TEXT HERE");
 
-format!(
+Ok(format!(
 r###"<img
   srcset="{}"
   sizes="{}"
@@ -28,7 +26,7 @@ r###"<img
   alt="{}"
 >"###,
 srcset, sizes, fallback_src, alt,
-)
+))
 }
 
 fn build_srcset(images: &[GeneratedImage]) -> String {
@@ -39,34 +37,15 @@ fn build_srcset(images: &[GeneratedImage]) -> String {
         .join(", ")
 }
 
-pub(crate) fn resolve_web_url(
-    file_path: &Path,
-    webserver_root: Option<&Path>,
-) -> io::Result<String> {
+pub(crate) fn resolve_web_url(file_path: &Path, webserver_root: Option<&Path>) -> Result<String> {
     let webserver_root = match webserver_root {
         Some(root) => root,
         None => {
             let filename = file_path
                 .file_name()
-                .ok_or_else(|| {
-                    io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        format!(
-                            "Could not extract filename from path: {}",
-                            file_path.display()
-                        ),
-                    )
-                })?
+                .ok_or_else(|| Error::FilenameExtraction(file_path.to_path_buf()))?
                 .to_str()
-                .ok_or_else(|| {
-                    io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        format!(
-                            "Filename in path '{}' contains invalid UTF-8",
-                            file_path.display()
-                        ),
-                    )
-                })?;
+                .ok_or_else(|| Error::InvalidUtf8(format!("{:?}", file_path)))?;
             return Ok(filename.to_string());
         }
     };
@@ -74,16 +53,13 @@ pub(crate) fn resolve_web_url(
     let canonical_file = file_path.canonicalize()?;
     let canonical_root = webserver_root.canonicalize()?;
 
-    let relative_path = canonical_file.strip_prefix(&canonical_root).map_err(|_| {
-        io::Error::new(
-            io::ErrorKind::InvalidInput,
-            format!(
-                "File '{}' is outside the webserver root '{}'",
-                canonical_file.display(),
-                canonical_root.display()
-            ),
-        )
-    })?;
+    let relative_path =
+        canonical_file
+            .strip_prefix(&canonical_root)
+            .map_err(|_| Error::FileOutsideRoot {
+                file: canonical_file.clone(),
+                root: canonical_root,
+            })?;
 
     let mut web_url = String::new();
     for component in relative_path.components() {
@@ -92,13 +68,7 @@ pub(crate) fn resolve_web_url(
                 web_url.push('/');
                 web_url.push_str(segment_str);
             } else {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "Path '{}' contains invalid UTF-8 characters",
-                        relative_path.display()
-                    ),
-                ));
+                return Err(Error::InvalidUtf8(format!("{:?}", relative_path)));
             }
         }
     }
