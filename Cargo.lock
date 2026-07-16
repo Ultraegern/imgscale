@@ -420,6 +420,15 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "image",
+ "thiserror",
+]
+
+[[package]]
+name = "imgscale-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "imgscale",
 ]
 
 [[package]]

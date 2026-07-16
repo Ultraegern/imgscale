@@ -1,0 +1,14 @@
+[package]
+name = "imgscale-cli"
+version = "0.1.0"
+description = "A cli for generating multiple sizes of images for web development"
+edition = "2024"
+
+[[bin]]
+# Renames the bin to "imgscale", while keeping "cargo install imgscale-cli"
+name = "imgscale"
+path = "src/main.rs"
+
+[dependencies]
+imgscale = { version = "*", path = "../imgscale", features = ["clap"] }
+clap = { version = "4.6", features = ["derive"] }
