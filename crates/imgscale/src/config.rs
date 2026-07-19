@@ -1,5 +1,3 @@
-#[cfg(feature = "clap")]
-use clap::ValueEnum;
 use image::ImageFormat;
 use std::{
     fmt,
@@ -88,8 +86,9 @@ impl TargetWidth {
     }
 }
 
+/// The only difference between [Jpeg](ExportFormat::Jpeg) and [Jpg](ExportFormat::Jpg) is whether you want a `.jpeg` or a `.jpg` extension.
 #[derive(Clone, Copy, Debug, Default)]
-#[cfg_attr(feature = "clap", derive(ValueEnum))]
+#[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
 pub enum ExportFormat {
     #[default]
     Webp,

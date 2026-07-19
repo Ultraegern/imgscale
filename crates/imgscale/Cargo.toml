@@ -6,7 +6,7 @@ edition = "2024"
 
 [features]
 default = []
-clap = ["dep:clap"] # impl clap types
+clap = ["dep:clap"] # Implement clap traits
 
 [dependencies]
 clap = { version = "4", features = ["derive"], optional = true }
