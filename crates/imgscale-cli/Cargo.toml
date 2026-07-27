@@ -1,7 +1,7 @@
 [package]
 name = "imgscale-cli"
 version = "0.1.0"
-description = "A cli for generating multiple sizes of images for web development"
+description = "A cli for generating various sizes of an image and the appropriate html <img> tag"
 edition = "2024"
 
 [[bin]]
