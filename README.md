@@ -4,23 +4,27 @@ A cli / library for generating various sizes of an image and the appropriate htm
 
 ## Features
 
-- Supports a wide range of input formats: (almost every format the `image` crate supports)
+- Supports a wide range of *input* formats:
 
-  - Jepg / Jpg
+  - Jpeg / Jpg
   - Png
   - Webp
   - Avif
 
-- Supports a wide range of output formats:
+- Supports a wide range of *output* formats:
 
-  - Jepg / Jpg
+  - Jpeg / Jpg
   - Png
   - Webp (Note: Only supports Lossless)
   - Avif
 
-- Generates html `<img>` tags
+- Generates html `<img>` tags:
 
-- TODO
+  - Can resolve the image web-path from a given root dir.
+
+- Handles one image on a single thread.
+
+  - You must bring your own multi-image/multithreading
 
 ## Cli
 
