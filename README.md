@@ -15,7 +15,8 @@ A cli / library for generating various sizes of an image and the appropriate htm
 
   - Jpeg / Jpg
   - Png
-  - Webp (Note: Only supports Lossless)
+  - Webp Lossless
+  - Webp Lossy (only with `zenwebp-agpl` feature)
   - Avif
 
 - Generates html `<img>` tags:
@@ -25,6 +26,20 @@ A cli / library for generating various sizes of an image and the appropriate htm
 - Handles one image on a single thread.
 
   - You must bring your own multi-image/multithreading
+
+## License
+
+### imgscale
+
+**`imgscale`** is licensed at your choice under either **MIT** or **Apache-2.0**.
+
+> [!IMPORTANT]  
+> The `zenwebp-agpl` feature pulls in `zenwebp` which is licensed **AGPL-3.0-only**.  
+> Enabling the optional `zenwebp-agpl` feature subjects any compiled binary or service using it to the terms of the AGPL-3.0.
+
+### imgscale-cli
+
+**`imgscale-cli`** is licensed **AGPL-3.0-only**, because it pulls in `zenwebp`.
 
 ## Cli
 
