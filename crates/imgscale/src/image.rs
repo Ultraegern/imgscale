@@ -1,5 +1,10 @@
-use crate::{Config, Error, Result, config::TargetWidth, model::GeneratedImage, web};
-use image::{DynamicImage, imageops::FilterType};
+use crate::{
+    Config, Error, ExportFormat, Result,
+    config::{Compression, TargetWidth},
+    model::GeneratedImage,
+    web,
+};
+use image::{DynamicImage, codecs::avif::AvifEncoder, imageops::FilterType};
 use std::{fs, path::Path};
 
 /// Loads an image from a file path, extracts its name, and scales it according to the config.
@@ -55,7 +60,7 @@ fn scale_image_internal(
 
         let output_path = config.out_dir().join(&filename);
 
-        resized.save_with_format(&output_path, config.format().into())?;
+        save_image(&resized, &output_path, config.format())?;
 
         let web_url = web::resolve_web_url(&output_path, config.root_dir())?;
 
@@ -63,4 +68,107 @@ fn scale_image_internal(
     }
 
     Ok(generated_images)
+}
+
+fn save_image(img: &DynamicImage, output_path: &Path, format: ExportFormat) -> Result<()> {
+    match format {
+        #[cfg(feature = "zenwebp-agpl")]
+        ExportFormat::Webp(Compression::Lossy) => {
+            let config = zenwebp::LossyConfig::new();
+
+            let out_bytes = match img.has_alpha() {
+                true => {
+                    let src = img.to_rgba8();
+                    let (width, height) = src.dimensions();
+
+                    zenwebp::EncodeRequest::lossy(
+                        &config,
+                        &src,
+                        zenwebp::PixelLayout::Rgba8,
+                        width,
+                        height,
+                    )
+                    .encode()
+                    .map_err(|e| e.decompose().0)?
+                }
+                false => {
+                    let src = img.to_rgb8();
+                    let (width, height) = src.dimensions();
+
+                    zenwebp::EncodeRequest::lossy(
+                        &config,
+                        &src,
+                        zenwebp::PixelLayout::Rgb8,
+                        width,
+                        height,
+                    )
+                    .encode()
+                    .map_err(|e| e.decompose().0)?
+                }
+            };
+
+            fs::write(output_path, out_bytes)?;
+        }
+        #[cfg(feature = "zenwebp-agpl")]
+        ExportFormat::Webp(Compression::Lossless) => {
+            let config = zenwebp::LosslessConfig::new();
+
+            let out_bytes = match img.has_alpha() {
+                true => {
+                    let src = img.to_rgba8();
+                    let (width, height) = src.dimensions();
+
+                    zenwebp::EncodeRequest::lossless(
+                        &config,
+                        &src,
+                        zenwebp::PixelLayout::Rgba8,
+                        width,
+                        height,
+                    )
+                    .encode()
+                    .map_err(|e| e.decompose().0)?
+                }
+                false => {
+                    let src = img.to_rgb8();
+                    let (width, height) = src.dimensions();
+
+                    zenwebp::EncodeRequest::lossless(
+                        &config,
+                        &src,
+                        zenwebp::PixelLayout::Rgb8,
+                        width,
+                        height,
+                    )
+                    .encode()
+                    .map_err(|e| e.decompose().0)?
+                }
+            };
+
+            fs::write(output_path, out_bytes)?;
+        }
+        #[cfg(not(feature = "zenwebp-agpl"))]
+        ExportFormat::WebpLossless => {
+            img.save_with_format(output_path, image::ImageFormat::WebP)?;
+        }
+        ExportFormat::Avif(compression) => {
+            let file = fs::File::create(output_path)?;
+
+            let quality = match compression {
+                Compression::Lossy => 80,
+                Compression::Lossless => 100,
+            };
+
+            let encoder = AvifEncoder::new_with_speed_quality(file, 3, quality);
+
+            img.write_with_encoder(encoder)?;
+        }
+        ExportFormat::Png => {
+            img.save_with_format(output_path, image::ImageFormat::Png)?;
+        }
+        ExportFormat::Jpeg | ExportFormat::Jpg => {
+            img.save_with_format(output_path, image::ImageFormat::Jpeg)?;
+        }
+    }
+
+    Ok(())
 }

@@ -21,6 +21,10 @@ pub enum Error {
     #[error("Image processing error: {0}")]
     Image(#[from] image::ImageError),
 
+    #[error("Zenwebp encode error: {0}")]
+    #[cfg(feature = "zenwebp-agpl")]
+    ZenwebpEncode(#[from] zenwebp::EncodeError),
+
     #[error("IO error: {0}")]
     Io(#[from] io::Error),
 }
