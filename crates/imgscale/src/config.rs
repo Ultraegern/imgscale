@@ -86,23 +86,107 @@ impl TargetWidth {
     }
 }
 
-/// The only difference between [Jpeg](ExportFormat::Jpeg) and [Jpg](ExportFormat::Jpg) is whether you want a `.jpeg` or a `.jpg` extension.
-#[derive(Clone, Copy, Debug, Default)]
-#[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
-pub enum ExportFormat {
+/// Compression mode
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Compression {
     #[default]
-    Webp,
-    Avif,
+    Lossy,
+    Lossless,
+}
+
+/// The only difference between [Jpeg](ExportFormat::Jpeg) and [Jpg](ExportFormat::Jpg) is whether you want a `.jpeg` or a `.jpg` extension.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ExportFormat {
+    #[cfg(not(feature = "zenwebp-agpl"))]
+    WebpLossless,
+    #[cfg(feature = "zenwebp-agpl")]
+    Webp(Compression),
+    Avif(Compression),
     Png,
     Jpeg,
     Jpg,
 }
 
+impl Default for ExportFormat {
+    fn default() -> Self {
+        #[cfg(not(feature = "zenwebp-agpl"))]
+        let out = Self::Jpg;
+        #[cfg(feature = "zenwebp-agpl")]
+        let out = Self::Webp(Compression::Lossy);
+
+        out
+    }
+}
+
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for ExportFormat {
+    fn value_variants<'a>() -> &'a [Self] {
+        {
+            &[
+                #[cfg(feature = "zenwebp-agpl")]
+                ExportFormat::Webp(Compression::Lossy),
+                #[cfg(feature = "zenwebp-agpl")]
+                ExportFormat::Webp(Compression::Lossless),
+                #[cfg(not(feature = "zenwebp-agpl"))]
+                ExportFormat::WebpLossless,
+                ExportFormat::Avif(Compression::Lossy),
+                ExportFormat::Avif(Compression::Lossless),
+                ExportFormat::Png,
+                ExportFormat::Jpeg,
+                ExportFormat::Jpg,
+            ]
+        }
+    }
+
+    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+        use clap::builder::PossibleValue;
+
+        match self {
+            #[cfg(feature = "zenwebp-agpl")]
+            ExportFormat::Webp(Compression::Lossy) => Some(
+                PossibleValue::new("webp-lossy")
+                    .alias("webp")
+                    .help("WebP with lossy compression"),
+            ),
+            #[cfg(feature = "zenwebp-agpl")]
+            ExportFormat::Webp(Compression::Lossless) => {
+                Some(PossibleValue::new("webp-lossless").help("WebP with lossless compression"))
+            }
+            #[cfg(not(feature = "zenwebp-agpl"))]
+            ExportFormat::WebpLossless => Some(
+                PossibleValue::new("webp-lossless")
+                    .alias("webp")
+                    .help("WebP with lossless compression"),
+            ),
+            ExportFormat::Avif(Compression::Lossy) => Some(
+                PossibleValue::new("avif-lossy")
+                    .alias("avif")
+                    .help("AVIF with lossy compression"),
+            ),
+            ExportFormat::Avif(Compression::Lossless) => {
+                Some(PossibleValue::new("avif-lossless").help("AVIF with lossless compression"))
+            }
+            ExportFormat::Png => {
+                Some(PossibleValue::new("png").help("Png with lossless compression"))
+            }
+            ExportFormat::Jpeg => {
+                Some(PossibleValue::new("jpeg").help("JPEG with lossy compression"))
+            }
+            ExportFormat::Jpg => Some(
+                PossibleValue::new("jpg").help("JPEG with lossy compression and a .jpg extension"),
+            ),
+        }
+    }
+}
+
 impl From<ExportFormat> for ImageFormat {
     fn from(format: ExportFormat) -> Self {
         match format {
-            ExportFormat::Webp => ImageFormat::WebP,
-            ExportFormat::Avif => ImageFormat::Avif,
+            #[cfg(not(feature = "zenwebp-agpl"))]
+            ExportFormat::WebpLossless => ImageFormat::WebP,
+            #[cfg(feature = "zenwebp-agpl")]
+            ExportFormat::Webp(_) => ImageFormat::WebP,
+            ExportFormat::Avif(_) => ImageFormat::Avif,
             ExportFormat::Png => ImageFormat::Png,
             ExportFormat::Jpeg | ExportFormat::Jpg => ImageFormat::Jpeg,
         }
@@ -112,8 +196,11 @@ impl From<ExportFormat> for ImageFormat {
 impl fmt::Display for ExportFormat {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let ext = match self {
-            ExportFormat::Webp => "webp",
-            ExportFormat::Avif => "avif",
+            #[cfg(not(feature = "zenwebp-agpl"))]
+            ExportFormat::WebpLossless => "webp",
+            #[cfg(feature = "zenwebp-agpl")]
+            ExportFormat::Webp(_) => "webp",
+            ExportFormat::Avif(_) => "avif",
             ExportFormat::Png => "png",
             ExportFormat::Jpeg => "jpeg",
             ExportFormat::Jpg => "jpg",
