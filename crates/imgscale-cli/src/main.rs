@@ -9,7 +9,7 @@ struct Args {
     input: PathBuf,
 
     /// Export format
-    #[arg(short, long, default_value = "webp")]
+    #[arg(short, long, default_value = "webp-lossy")]
     format: ExportFormat,
 
     /// Target widths for the output images (e.g. "-w 400,800,1200")
