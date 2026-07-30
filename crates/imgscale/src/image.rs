@@ -4,7 +4,10 @@ use crate::{
     model::GeneratedImage,
     web,
 };
-use image::{DynamicImage, codecs::avif::AvifEncoder, imageops::FilterType};
+use image::{
+    DynamicImage, ImageDecoder, ImageReader, Limits, codecs::avif::AvifEncoder,
+    imageops::FilterType, metadata::Orientation,
+};
 use std::{fs, path::Path};
 
 /// Loads an image from a file path, extracts its name, and scales it according to the config.
@@ -26,7 +29,14 @@ pub fn scale_image_from_file<P: AsRef<Path>>(
         .to_str()
         .ok_or_else(|| Error::InvalidUtf8(format!("{:?}", path)))?;
 
-    let img = image::open(path)?;
+    let mut reader = ImageReader::open(path)?;
+    reader.limits(Limits::default());
+
+    let mut decoder = reader.into_decoder()?;
+    let orientation = decoder.orientation().unwrap_or(Orientation::NoTransforms);
+
+    let mut img = DynamicImage::from_decoder(decoder)?;
+    img.apply_orientation(orientation);
 
     scale_image_internal(img, name, config)
 }
