@@ -45,7 +45,7 @@ A cli / library for generating various sizes of an image and the appropriate htm
 
 ### Installation
 
-Right now it is only available from source. I might publice binaries to GitHub Releases and add support for `cargo binstall` in the future.
+Right now it is only available from source. I might publish binaries to GitHub Releases and add support for `cargo binstall` in the future.
 
 Install from source (will install the `imgscale` binary):
 
@@ -58,3 +58,7 @@ cargo install imgscale-cli
 ```shell
 imgscale --widths 400,800,1200 input-img.jpg --output-dir some/dir
 ```
+
+## Library
+
+See examples and documentation at [docs.rs](https://docs.rs/imgscale).
