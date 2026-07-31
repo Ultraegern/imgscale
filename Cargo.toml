@@ -4,3 +4,11 @@ members = [
     "crates/imgscale",
     "crates/imgscale-cli",
 ]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+authors = ["Ultraegern"]
+repository = "https://github.com/ultraegern/imgscale"
+readme = "README.md"
