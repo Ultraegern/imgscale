@@ -1,5 +1,5 @@
 use clap::Parser;
-use imgscale::{Config, ExportFormat, build_img_tag, scale_image_from_file};
+use imgscale::{Config, ExportFormat, build_img_tag, config::CacheMode, scale_image_from_file};
 use std::{num::NonZeroU32, path::PathBuf};
 
 #[derive(Parser, Debug)]
@@ -31,6 +31,10 @@ struct Args {
     /// Where to save the images (e.g. "/var/www/html/assets" or "./dist/images")
     #[arg(short, long, default_value = ".")]
     output_dir: PathBuf,
+
+    /// How should imgscale cache the output files
+    #[arg(short, long, default_value = "overwrite")]
+    cache_mode: CacheMode,
 }
 
 fn main() {
@@ -41,6 +45,7 @@ fn main() {
         args.widths.into_iter().map(|w| w.get()).collect(),
         args.output_dir,
         args.root,
+        args.cache_mode,
     );
 
     let generated_images = match scale_image_from_file(args.input, &config) {
