@@ -1,6 +1,6 @@
 use image::ImageFormat;
 use std::{
-    fmt,
+    fmt, fs, io,
     path::{Path, PathBuf},
 };
 
@@ -73,6 +73,10 @@ impl Config {
     pub fn cache_mode(&self) -> CacheMode {
         self.cache_mode
     }
+
+    pub(crate) fn should_write(&self, path: &Path) -> io::Result<bool> {
+        self.cache_mode.should_write(path)
+    }
 }
 
 /// How should imgscale handle existing files
@@ -82,6 +86,15 @@ pub enum CacheMode {
     Overwrite,
     /// Skip an image if all the export files already exists
     SkipExisting,
+}
+
+impl CacheMode {
+    pub(crate) fn should_write(&self, path: &Path) -> io::Result<bool> {
+        match self {
+            Self::Overwrite => Ok(true),
+            Self::SkipExisting => Ok(!fs::exists(path)?),
+        }
+    }
 }
 
 #[cfg(feature = "clap")]

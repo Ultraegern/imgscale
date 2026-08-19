@@ -1,6 +1,6 @@
 use crate::{
     Config, Error, ExportFormat, Result,
-    config::{Compression, TargetWidth},
+    config::{CacheMode, Compression, TargetWidth},
     model::GeneratedImage,
     web,
 };
@@ -54,27 +54,31 @@ fn scale_image_internal(
 
     let mut generated_images = Vec::with_capacity(widths.len());
     for width in widths {
-        let (resized, filename, actual_width) = match width {
+        match width {
             TargetWidth::Full => {
                 let filename = format!("{}-full.{}", name, config.format());
+                let output_path = config.out_dir().join(&filename);
+                let web_url = web::resolve_web_url(&output_path, config.root_dir())?;
 
-                (img.clone(), filename, img.width())
+                if config.should_write(&output_path)? {
+                    save_image(&img, &output_path, config.format())?;
+                }
+
+                generated_images.push(GeneratedImage::new(output_path, web_url, img.width()));
             }
             TargetWidth::Scale(w) => {
-                let resized = img.resize(w, u32::MAX, FilterType::Lanczos3);
                 let filename = format!("{}-{}w.{}", name, w, config.format());
+                let output_path = config.out_dir().join(&filename);
+                let web_url = web::resolve_web_url(&output_path, config.root_dir())?;
 
-                (resized, filename, w)
+                if config.should_write(&output_path)? {
+                    let resized = img.resize(w, u32::MAX, FilterType::Lanczos3);
+                    save_image(&resized, &output_path, config.format())?;
+                }
+
+                generated_images.push(GeneratedImage::new(output_path, web_url, w));
             }
         };
-
-        let output_path = config.out_dir().join(&filename);
-
-        save_image(&resized, &output_path, config.format())?;
-
-        let web_url = web::resolve_web_url(&output_path, config.root_dir())?;
-
-        generated_images.push(GeneratedImage::new(output_path, web_url, actual_width));
     }
 
     Ok(generated_images)
