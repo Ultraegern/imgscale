@@ -1,6 +1,6 @@
 use crate::{
     Config, Error, ExportFormat, Result,
-    config::{CacheMode, Compression, TargetWidth},
+    config::{Compression, TargetWidth},
     model::GeneratedImage,
     web,
 };
@@ -54,31 +54,28 @@ fn scale_image_internal(
 
     let mut generated_images = Vec::with_capacity(widths.len());
     for width in widths {
-        match width {
-            TargetWidth::Full => {
-                let filename = format!("{}-full.{}", name, config.format());
-                let output_path = config.out_dir().join(&filename);
-                let web_url = web::resolve_web_url(&output_path, config.root_dir())?;
-
-                if config.should_write(&output_path)? {
-                    save_image(&img, &output_path, config.format())?;
-                }
-
-                generated_images.push(GeneratedImage::new(output_path, web_url, img.width()));
-            }
-            TargetWidth::Scale(w) => {
-                let filename = format!("{}-{}w.{}", name, w, config.format());
-                let output_path = config.out_dir().join(&filename);
-                let web_url = web::resolve_web_url(&output_path, config.root_dir())?;
-
-                if config.should_write(&output_path)? {
-                    let resized = img.resize(w, u32::MAX, FilterType::Lanczos3);
-                    save_image(&resized, &output_path, config.format())?;
-                }
-
-                generated_images.push(GeneratedImage::new(output_path, web_url, w));
-            }
+        let (filename, actual_width, needs_scaling) = match width {
+            TargetWidth::Full => (
+                format!("{}-full.{}", name, config.format()),
+                img.width(),
+                false,
+            ),
+            TargetWidth::Scale(w) => (format!("{}-{}w.{}", name, w, config.format()), w, true),
         };
+
+        let output_path = config.out_dir().join(&filename);
+        let web_url = web::resolve_web_url(&output_path, config.root_dir())?;
+
+        if config.should_write(&output_path)? {
+            if needs_scaling {
+                let resized = img.resize(actual_width, u32::MAX, FilterType::Lanczos3);
+                save_image(&resized, &output_path, config.format())?;
+            } else {
+                save_image(&img, &output_path, config.format())?;
+            }
+        }
+
+        generated_images.push(GeneratedImage::new(output_path, web_url, img.width()));
     }
 
     Ok(generated_images)
