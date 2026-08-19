@@ -80,9 +80,10 @@ impl Config {
 }
 
 /// How should imgscale handle existing files
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CacheMode {
     /// Will always generate new files and overwrite any existing files
+    #[default]
     Overwrite,
     /// Skip an image if all the export files already exists
     SkipExisting,
