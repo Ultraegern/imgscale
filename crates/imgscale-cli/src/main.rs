@@ -1,5 +1,5 @@
 use clap::Parser;
-use imgscale::{Config, ExportFormat, build_img_tag, config::CacheMode, scale_image_from_file};
+use imgscale::{CacheMode, Config, ExportFormat, build_img_tag, scale_image_from_file};
 use std::{num::NonZeroU32, path::PathBuf};
 
 #[derive(Parser, Debug)]

@@ -86,6 +86,9 @@ pub enum CacheMode {
     #[default]
     Overwrite,
     /// Skip an image if all the export files already exist
+    ///
+    /// Note: If the src image changes it will **NOT** re-render  
+    /// (TODO: Add a CacheMode that checks the src file timestamp)
     SkipExisting,
 }
 
