@@ -85,7 +85,7 @@ pub enum CacheMode {
     /// Will always generate new files and overwrite any existing files
     #[default]
     Overwrite,
-    /// Skip an image if all the export files already exists
+    /// Skip an image if all the export files already exist
     SkipExisting,
 }
 
@@ -109,7 +109,7 @@ impl clap::ValueEnum for CacheMode {
             CacheMode::Overwrite => clap::builder::PossibleValue::new("overwrite")
                 .help("Will always generate new files and overwrite any existing files"),
             CacheMode::SkipExisting => clap::builder::PossibleValue::new("skip-existing")
-                .help("Skip an image if all the export files already exists"),
+                .help("Skip an image if all the export files already exist"),
         })
     }
 }
