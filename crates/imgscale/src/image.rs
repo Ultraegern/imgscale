@@ -75,7 +75,7 @@ fn scale_image_internal(
             }
         }
 
-        generated_images.push(GeneratedImage::new(output_path, web_url, img.width()));
+        generated_images.push(GeneratedImage::new(output_path, web_url, actual_width));
     }
 
     Ok(generated_images)
