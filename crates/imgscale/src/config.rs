@@ -11,6 +11,7 @@ pub struct Config {
     out_dir: PathBuf,
     /// Base/root directory used to resolve relative paths.
     root_dir: Option<PathBuf>,
+    cache_mode: CacheMode,
 }
 
 impl Config {
@@ -22,12 +23,14 @@ impl Config {
         widths: Vec<u32>,
         out_dir: PathBuf,
         root_dir: Option<PathBuf>,
+        cache_mode: CacheMode,
     ) -> Self {
         Self {
             format,
             widths,
             out_dir,
             root_dir,
+            cache_mode,
         }
     }
 
@@ -65,6 +68,35 @@ impl Config {
     /// Returns the root directory if it was set.
     pub fn root_dir(&self) -> Option<&Path> {
         self.root_dir.as_deref()
+    }
+
+    pub fn cache_mode(&self) -> CacheMode {
+        self.cache_mode
+    }
+}
+
+/// How should imgscale handle existing files
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CacheMode {
+    /// Will always generate new files and overwrite any existing files
+    Overwrite,
+    /// Skip an image if all the export files already exists
+    SkipExisting,
+}
+
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for CacheMode {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[CacheMode::Overwrite, CacheMode::SkipExisting]
+    }
+
+    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+        Some(match self {
+            CacheMode::Overwrite => clap::builder::PossibleValue::new("overwrite")
+                .help("Will always generate new files and overwrite any existing files"),
+            CacheMode::SkipExisting => clap::builder::PossibleValue::new("skip-existing")
+                .help("Skip an image if all the export files already exists"),
+        })
     }
 }
 
