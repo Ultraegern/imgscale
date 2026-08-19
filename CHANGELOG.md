@@ -6,4 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 
 ## [Unreleased]
 
-- Adds caching support. Enable/disable using `imgscale::CacheMode`. `CacheMode::Overwrite` is the same behavior as before (Always render and save all images), and `CacheMode::SkipExisting` dosn't render an image if it is already rendered.
+Adds caching support. Enable/disable using `imgscale::CacheMode`. `CacheMode::Overwrite` is the same behavior as before (Always render and save all images), and `CacheMode::SkipExisting` skips rendering an image if it is already rendered.
+
+## [0.1.0] - 2026-07-31
+
+Initial release.

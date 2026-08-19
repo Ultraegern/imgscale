@@ -23,6 +23,8 @@ A cli / library for generating various sizes of an image and the appropriate htm
 
   - Can resolve the image web-path from a given root dir.
 
+- Supports output caching.
+
 - Handles one image on a single thread.
 
   - You must bring your own multi-image/multithreading
