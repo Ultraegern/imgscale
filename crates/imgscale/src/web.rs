@@ -50,15 +50,15 @@ pub(crate) fn resolve_web_url(file_path: &Path, webserver_root: Option<&Path>) -
         }
     };
 
-    let canonical_file = file_path.canonicalize()?;
-    let canonical_root = webserver_root.canonicalize()?;
+    let absolute_file = path::absolute(file_path)?;
+    let absolute_root = path::absolute(webserver_root)?;
 
     let relative_path =
-        canonical_file
-            .strip_prefix(&canonical_root)
+        absolute_file
+            .strip_prefix(&absolute_root)
             .map_err(|_| Error::FileOutsideRoot {
-                file: canonical_file.clone(),
-                root: canonical_root,
+                file: absolute_file.clone(),
+                root: absolute_root,
             })?;
 
     let mut web_url = String::new();
