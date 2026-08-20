@@ -21,5 +21,5 @@ name = "imgscale"
 path = "src/main.rs"
 
 [dependencies]
-imgscale = { path = "../imgscale", version = "0.2.0", features = ["clap", "zenwebp-agpl"] }
+imgscale = { path = "../imgscale", version = "0.2.1", features = ["clap", "zenwebp-agpl"] }
 clap = { version = "4.6", features = ["derive"] }
